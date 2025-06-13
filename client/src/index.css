@@ -7,7 +7,8 @@
 
   color-scheme: light dark;
   /* color: rgba(255, 255, 255, 0.87); */
-  background-color: #161e20;
+  background-color: #000000;
+  /* background-color: #161e20; */
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
