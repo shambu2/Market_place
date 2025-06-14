@@ -1,16 +1,16 @@
 import express, { Request, Response } from "express";
-const app = express();
-const PORT = 5000
-import userRoutes from "./routes/user"
 import mongoose from "mongoose";
 import { configDotenv } from "dotenv";
+import routes from "./routes/index";
+import cors from 'cors';
+const app = express();
+const PORT = 5000;
 configDotenv();
-app.get('/',(req:Request,res:Response)=>{
-    res.send("this is from backend server of port 5000")
-    
-})
+app.use(cors())
+app.use(express.json())
+app.use("/api/v1",routes)
 
-app.use('/api/v1',userRoutes)
+// app.use('/api/v1',userRoutes)
 mongoose.connect(process.env.DB_URL as string)
 app.listen(PORT,()=>{
     console.log(`Server is running in ${PORT}`)
