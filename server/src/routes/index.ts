@@ -4,6 +4,9 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { User } from "../models";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import path from "path";
+import { error } from "console";
 const router = express.Router();
 router.get("/", async (req: Request, res: Response) => {
   res.json("hellow from routes");
@@ -53,5 +56,31 @@ router.post("/login", async (req: Request, res: Response) => {
     return;
   }
 });
+
+const storage = multer.diskStorage({
+  destination: function (req,file,cb){
+    cb(null,'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random()* 1E9);
+    const extensionName = path.extname(file.originalname).toLowerCase();
+    cb(null,uniqueSuffix + extensionName )
+  },
+})
+const upload = multer({storage: storage})
+router.post('/admin/new',upload.array('images',10),(req:Request,res:Response)=>{
+  const {title,summary,price,size} = req.body;
+  const files = req.files;
+
+  if(!title || !summary || !price){
+     res.status(400).json({error:"Fill all fields"})
+     return;
+  }
+  if(!files || files.length === 0){
+     res.status(400).json({error: "at least one image must be uploaded"})
+     return;
+  }
+
+})
 
 export default router;

@@ -13,3 +13,25 @@ const userSchema = new mongoose.Schema({
 })
 
 export const User = mongoose.model("User",userSchema)
+
+const itemSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true,
+    },
+    summary:{
+        type: String,
+        required: true
+    },
+    price:{
+        type: Number,
+        required: true
+    },
+    images: [{type: String}],
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }
+},{timestamps: true})
+
+export const Item = mongoose.model("Item",itemSchema)
