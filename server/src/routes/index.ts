@@ -2,7 +2,7 @@ import express from "express";
 import { Request, Response } from "express";
 // const router = express.Router();
 import bcrypt from "bcrypt";
-import { User } from "../models";
+import { Item, User } from "../models";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
@@ -58,29 +58,48 @@ router.post("/login", async (req: Request, res: Response) => {
 });
 
 const storage = multer.diskStorage({
-  destination: function (req,file,cb){
-    cb(null,'uploads/');
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random()* 1E9);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const extensionName = path.extname(file.originalname).toLowerCase();
-    cb(null,uniqueSuffix + extensionName )
+    cb(null, uniqueSuffix + extensionName);
   },
-})
-const upload = multer({storage: storage})
-router.post('/admin/new',upload.array('images',10),(req:Request,res:Response)=>{
-  const {title,summary,price,size} = req.body;
-  const files = req.files;
+});
+const upload = multer({ storage: storage });
+router.post("/admin/new",upload.array("images", 10),async(req: Request, res: Response) => {
+  try {
+    const { title, summary, price, size } = req.body;
+    const files = req.files as Express.Multer.File[]
 
-  if(!title || !summary || !price){
-     res.status(400).json({error:"Fill all fields"})
-     return;
-  }
-  if(!files || files.length === 0){
-     res.status(400).json({error: "at least one image must be uploaded"})
-     return;
-  }
+    if (!title || !summary || !price) {
+      res.status(400).json({ error: "Fill all fields" });
+      return;
+    }
+    if (!files || files.length === 0) {
+      res.status(400).json({ error: "at least one image must be uploaded" });
+      return;
+    }
+    const imagePaths:string[] = files.map(file => file.path)
 
-})
+    const item = new Item({
+      title,
+      summary,
+      price,
+      images: imagePaths
+    })
+    const savedItem = await item.save();
+    res.status(201).json({
+      message: 'Product saved to user',
+      item: savedItem
+    })
+    return;
+  } catch (error) {
+    res.status(500).json({error: 'Internal server error'})
+  }
+    
+  }
+);
 
 export default router;

@@ -27,6 +27,7 @@ const itemSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    
     images: [{type: String}],
     owner: {
         type: mongoose.Schema.Types.ObjectId,
