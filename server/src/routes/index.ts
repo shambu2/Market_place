@@ -6,7 +6,16 @@ import { Item, User } from "../models";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
-import { error } from "console";
+// import { Request } from 'express';
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    userId?: string;
+  }
+}
+
+// import { error } from "console";
+const jwt_secrete = "nothing_is_secret_key"
 const router = express.Router();
 router.get("/", async (req: Request, res: Response) => {
   res.json("hellow from routes");
@@ -41,7 +50,7 @@ router.post("/login", async (req: Request, res: Response) => {
       res.status(404).send("Enter correct Password");
       return;
     }
-    const token = jwt.sign({ id: user?.id }, "nothing_is_secret_key", {
+    const token = jwt.sign({ id: user?.id }, jwt_secrete, {
       expiresIn: "7d",
     });
     res.cookie("token", token, {
@@ -70,9 +79,20 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 router.post("/admin/new",upload.array("images", 10),async(req: Request, res: Response) => {
   try {
-    const { title, summary, price, size } = req.body;
+    const { title, summary, price } = req.body;
     const files = req.files as Express.Multer.File[]
-
+    const {token} = req.cookies?.token;
+    const decoded = jwt.verify(token,jwt_secrete) as {id: string}
+    if(!token){
+      res.status(401).json({message: 'login maadi '})
+      return;
+    }
+    try {
+      const decoded = jwt.verify(token,jwt_secrete) as {id: string} ;
+      req.userId = decoded.id;
+    } catch (error) {
+      res.status(401).json({message:'Invalid token!'});
+    }
     if (!title || !summary || !price) {
       res.status(400).json({ error: "Fill all fields" });
       return;
@@ -87,7 +107,8 @@ router.post("/admin/new",upload.array("images", 10),async(req: Request, res: Res
       title,
       summary,
       price,
-      images: imagePaths
+      images: imagePaths,
+      owner: req.userId
     })
     const savedItem = await item.save();
     res.status(201).json({
