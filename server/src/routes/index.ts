@@ -2,7 +2,7 @@ import express from "express";
 import { Request, Response } from "express";
 // const router = express.Router();
 import bcrypt from "bcrypt";
-import { Item, User } from "../models";
+import {  Customers, Item, User } from "../models";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
@@ -173,5 +173,29 @@ router.put("/item/:id", async (req: Request, res: Response) => {
     res.status(500).json({ message: "bad request from user" });
   }
 });
+
+router.post("/customer/register",async(req:Request,res:Response)=>{
+   const { email, password } = req.body;
+  const salt = bcrypt.genSaltSync(10);
+  const hashedPassword = bcrypt.hashSync(password, salt);
+  try {
+    const userExist = await Customers.findOne({email})
+    if(userExist){
+      res.status(404).json("User exist please login")
+      return;
+    }
+    const user = new Customers({email,password:hashedPassword});
+    await user.save();
+    res.status(201).json({message:'User created',user})
+    return;
+  } catch (error) {
+    res.status(500).json("Error while registering User" );
+    return;
+  }
+  // console.log(hashedPassword)
+
+})
+
+
 
 export default router;

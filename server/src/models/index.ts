@@ -37,3 +37,16 @@ const itemSchema = new mongoose.Schema({
 },{timestamps: true})
 
 export const Item = mongoose.model("Item",itemSchema)
+
+const customerSchema = new mongoose.Schema({
+    email:{
+        type: String,
+        required :true,
+        unique: true
+    },
+    password:{
+        type: String,
+        required: true
+    }
+})
+export const Customers = mongoose.model('Customers',customerSchema);
