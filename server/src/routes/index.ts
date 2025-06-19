@@ -2,11 +2,12 @@ import express from "express";
 import { Request, Response } from "express";
 // const router = express.Router();
 import bcrypt from "bcrypt";
-import {  Customers, Item, User } from "../models";
+import { Customers, Item, User } from "../models";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
 import { Types } from "mongoose";
+import { strict } from "assert";
 const jwt_secrete = "nothing_is_secret_key";
 const router = express.Router();
 
@@ -149,7 +150,7 @@ router.put("/item/:id", async (req: Request, res: Response) => {
     return;
   }
   const Id = new Types.ObjectId(id);
-  const { title, summary, price } = req.body || {} ;
+  const { title, summary, price } = req.body || {};
   const files = req.files;
   // if(!title || !summary || !price){
   //   res.status(400).json("Fill all fields")
@@ -161,7 +162,7 @@ router.put("/item/:id", async (req: Request, res: Response) => {
     const updatedItem = await Item.findByIdAndUpdate(
       Id,
       { title, summary, price },
-      {new:true}
+      { new: true }
     );
     if (!updatedItem) {
       res.status(404).json({ message: "Product not found" });
@@ -174,28 +175,62 @@ router.put("/item/:id", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/customer/register",async(req:Request,res:Response)=>{
-   const { email, password } = req.body;
+router.post("/customer/register", async (req: Request, res: Response) => {
+  const { email, password } = req.body;
   const salt = bcrypt.genSaltSync(10);
   const hashedPassword = bcrypt.hashSync(password, salt);
   try {
-    const userExist = await Customers.findOne({email})
-    if(userExist){
-      res.status(404).json("User exist please login")
+    const userExist = await Customers.findOne({ email });
+    if (userExist) {
+      res.status(404).json("User exist please login");
       return;
     }
-    const user = new Customers({email,password:hashedPassword});
+    const user = new Customers({ email, password: hashedPassword });
     await user.save();
-    res.status(201).json({message:'User created',user})
+    res.status(201).json({ message: "User created", user });
     return;
   } catch (error) {
-    res.status(500).json("Error while registering User" );
+    res.status(500).json("Error while registering User");
     return;
   }
   // console.log(hashedPassword)
+});
 
-})
+router.post("/customer/login", async (req: Request, res: Response) => {
+  const { email, password } = req.body || {};
+  const customer = await Customers.findOne({ email });
 
-
+  try {
+    if(!email || !password){
+      res.status(400).json("fill all the fields")
+      return;
+    }
+    if (!customer) {
+      res.status(400).json("user doesn't exist");
+      return;
+    }
+    const correctPassword = bcrypt.compareSync(
+      password,
+      customer?.password as string
+    );
+    if (!correctPassword) {
+      res.status(400).json("incorrect password");
+      return;
+    }
+    // jwt.sign(customer.id,jwt_secrete)
+    const customerToken = jwt.sign({ id: customer.id }, jwt_secrete, {
+      expiresIn: "7d",
+    });
+    res.cookie("jwt", customerToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    res.status(200).json("login successfull");
+    return;
+  } catch (error) {
+    res.status(500).json("Error while loging in.");
+  }
+});
 
 export default router;
