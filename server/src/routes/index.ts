@@ -6,6 +6,7 @@ import { Item, User } from "../models";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
+import { Types } from "mongoose";
 const jwt_secrete = "nothing_is_secret_key";
 const router = express.Router();
 
@@ -141,15 +142,36 @@ router.get("/listing", async (req: Request, res: Response) => {
 });
 
 router.put("/item/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+
+  if (!Types.ObjectId.isValid(id)) {
+    res.status(400).send("Invalid ObjectId");
+    return;
+  }
+  const Id = new Types.ObjectId(id);
+  const { title, summary, price } = req.body || {} ;
+  const files = req.files;
+  // if(!title || !summary || !price){
+  //   res.status(400).json("Fill all fields")
+  //   return;
+  // }
   try {
-    const item = await Item.findById(req.params.id);
-    res.status(200).json(item)
+    // const item = await Item.findById(req.params.id);
+    // res.status(200).json(item)
+    const updatedItem = await Item.findByIdAndUpdate(
+      Id,
+      { title, summary, price },
+      {new:true}
+    );
+    if (!updatedItem) {
+      res.status(404).json({ message: "Product not found" });
+      return;
+    }
+    res.status(200).json(updatedItem);
     return;
   } catch (error) {
-    res.status(400).json({message:"bad request from user"})
+    res.status(500).json({ message: "bad request from user" });
   }
 });
-
-router;
 
 export default router;
