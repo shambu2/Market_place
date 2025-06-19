@@ -134,8 +134,22 @@ router.get("/listing", async (req: Request, res: Response) => {
 
   try {
     const itemList: string[] = await Item.find({ owner: userId });
-    res.status(200).json({message:"here is listing of products",items: itemList,})
+    res
+      .status(200)
+      .json({ message: "here is listing of products", items: itemList });
   } catch (error) {}
 });
+
+router.put("/item/:id", async (req: Request, res: Response) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    res.status(200).json(item)
+    return;
+  } catch (error) {
+    res.status(400).json({message:"bad request from user"})
+  }
+});
+
+router;
 
 export default router;
