@@ -8,11 +8,11 @@ import multer from "multer";
 import path from "path";
 // import { Request } from 'express';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    userId?: string;
-  }
-}
+// declare module 'express-serve-static-core' {
+//   interface Request {
+//     userId?: string;
+//   }
+// }
 
 // import { error } from "console";
 const jwt_secrete = "nothing_is_secret_key"
@@ -81,18 +81,26 @@ router.post("/admin/new",upload.array("images", 10),async(req: Request, res: Res
   try {
     const { title, summary, price } = req.body;
     const files = req.files as Express.Multer.File[]
-    const {token} = req.cookies?.token;
-    const decoded = jwt.verify(token,jwt_secrete) as {id: string}
+    const token = req.cookies?.token;
+    // let decoded: {id: string};
+    // const decoded = jwt.verify(token,jwt_secrete) as {id: string}
+    let userInfo;
     if(!token){
       res.status(401).json({message: 'login maadi '})
       return;
+    
     }
     try {
-      const decoded = jwt.verify(token,jwt_secrete) as {id: string} ;
-      req.userId = decoded.id;
+      const decoded = jwt.verify(token,jwt_secrete) as {id:string};
+      userInfo = await User.findById(decoded.id);
+      if(!userInfo){
+        res.status(404).json({message:'user not found'})
+      }
     } catch (error) {
-      res.status(401).json({message:'Invalid token!'});
+      res.status(403).json({message:'invalid token'})
     }
+    
+   
     if (!title || !summary || !price) {
       res.status(400).json({ error: "Fill all fields" });
       return;
@@ -102,13 +110,13 @@ router.post("/admin/new",upload.array("images", 10),async(req: Request, res: Res
       return;
     }
     const imagePaths:string[] = files.map(file => file.path)
-
+    
     const item = new Item({
       title,
       summary,
       price,
       images: imagePaths,
-      owner: req.userId
+      owner: userInfo?.id
     })
     const savedItem = await item.save();
     res.status(201).json({

@@ -3,10 +3,12 @@ import mongoose from "mongoose";
 import { configDotenv } from "dotenv";
 import allRoutes from "./routes/index";
 import cors from 'cors';
+import cookieParser from "cookie-parser";
 // import MediaDeviceInfo from ''
 const app = express();
 const PORT = 5000;
 configDotenv();
+app.use(cookieParser());
 app.use(cors())
 app.use(express.json())
 app.use("/",allRoutes)
