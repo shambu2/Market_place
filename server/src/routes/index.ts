@@ -10,7 +10,8 @@ import { Types } from "mongoose";
 import { strict } from "assert";
 const jwt_secrete = "nothing_is_secret_key";
 const router = express.Router();
-
+// import cookieParser from "cookie-parser";
+// router.use(cookieParser())
 declare module "express-serve-static-core" {
   interface Request {
     userId?: string;
@@ -201,8 +202,8 @@ router.post("/customer/login", async (req: Request, res: Response) => {
   const customer = await Customers.findOne({ email });
 
   try {
-    if(!email || !password){
-      res.status(400).json("fill all the fields")
+    if (!email || !password) {
+      res.status(400).json("fill all the fields");
       return;
     }
     if (!customer) {
@@ -221,7 +222,7 @@ router.post("/customer/login", async (req: Request, res: Response) => {
     const customerToken = jwt.sign({ id: customer.id }, jwt_secrete, {
       expiresIn: "7d",
     });
-    res.cookie("jwt", customerToken, {
+    res.cookie("jwtToken", customerToken, {
       httpOnly: true,
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -230,7 +231,47 @@ router.post("/customer/login", async (req: Request, res: Response) => {
     return;
   } catch (error) {
     res.status(500).json("Error while loging in.");
+    return;
   }
 });
+
+// router.get("/all", async (req: Request, res: Response) => {
+//   const jwtToken = req.cookies?.jwtToken;
+
+
+//   // res.send(jwtToken);
+//   // try {
+//   // if(!jwtToken){
+//   //   res.json("login maadi")
+//   //   return;
+//   // }
+//   // const verify = jwt.verify(jwtToken,jwtToken) as {id:string};
+//   // console.log(verify)
+//   //   res.send("hello")
+//   // } catch (error) {
+//   //   res.send("error")
+//   // }
+// });
+
+router.get('/all',async(req:Request,res:Response)=>{
+  const jwtToken = req.cookies?.jwtToken;
+  if(!jwtToken){
+    res.status(400).json("Please login");
+    return;
+  }
+  try {
+   const decoded = jwt.verify(jwtToken,jwt_secrete) as {id:string};
+   const user = await Customers.findById(decoded.id);
+   if(!user){
+    res.status(404).json({message: 'user not found'});
+    return;
+   }
+   const posts:string[] = await Item.find({});
+   res.status(200).json(posts);
+   return;
+  } catch (error) {
+    res.status(401).json({message:"Invalid token"})
+  }
+})
 
 export default router;
