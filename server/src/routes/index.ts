@@ -235,43 +235,41 @@ router.post("/customer/login", async (req: Request, res: Response) => {
   }
 });
 
-// router.get("/all", async (req: Request, res: Response) => {
-//   const jwtToken = req.cookies?.jwtToken;
-
-
-//   // res.send(jwtToken);
-//   // try {
-//   // if(!jwtToken){
-//   //   res.json("login maadi")
-//   //   return;
-//   // }
-//   // const verify = jwt.verify(jwtToken,jwtToken) as {id:string};
-//   // console.log(verify)
-//   //   res.send("hello")
-//   // } catch (error) {
-//   //   res.send("error")
-//   // }
-// });
-
-router.get('/all',async(req:Request,res:Response)=>{
+router.get("/all", async (req: Request, res: Response) => {
   const jwtToken = req.cookies?.jwtToken;
-  if(!jwtToken){
+  if (!jwtToken) {
     res.status(400).json("Please login");
     return;
   }
   try {
-   const decoded = jwt.verify(jwtToken,jwt_secrete) as {id:string};
-   const user = await Customers.findById(decoded.id);
-   if(!user){
-    res.status(404).json({message: 'user not found'});
+    const decoded = jwt.verify(jwtToken, jwt_secrete) as { id: string };
+    const user = await Customers.findById(decoded.id);
+    if (!user) {
+      res.status(404).json({ message: "user not found" });
+      return;
+    }
+    const posts: string[] = await Item.find({});
+    res.status(200).json(posts);
     return;
-   }
-   const posts:string[] = await Item.find({});
-   res.status(200).json(posts);
-   return;
   } catch (error) {
-    res.status(401).json({message:"Invalid token"})
+    res.status(401).json({ message: "Invalid token" });
   }
-})
+});
+
+router.get("/item/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+  if (!Types.ObjectId.isValid(id)) {
+    res.status(400).json("Product does not exist");
+    return;
+  }
+  try {
+    const item = await Item.findById(id);
+    res.status(200).json(item);
+    return;
+  } catch (error) {
+    res.status(500).json("Error while fetching product")
+    return;
+  }
+});
 
 export default router;
